@@ -1,0 +1,15 @@
+#include<stdio.h>
+#include<dirent.h>
+int main(){
+	DIR *d;
+	struct dirent *dir;
+	d=opendir("ABC");//this will show me the folder of this directory or i can say alll the content of the given folder....if i will write here . ,it will give me all the name of folders present in desktop.
+	//but we need to save our program in that particular folder  only like for ABC i save it in sem4 folder...
+	
+	if(d){
+		while((dir =readdir(d))!=NULL){
+			printf("%s\n",dir -> d_name);
+		}
+		closedir(d);
+	}
+}
