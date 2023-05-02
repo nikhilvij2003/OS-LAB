@@ -1,0 +1,234 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+
+#define MAX_STRINGS 10
+#define MAX_STRING_LENGTH 100
+
+char strings[MAX_STRINGS][MAX_STRING_LENGTH];
+int num_strings;
+
+void *concatenate_strings(void *arg) {
+    int i;
+    char *result = malloc(MAX_STRING_LENGTH * sizeof(char));
+    result[0] = '\0';
+    
+    for (i = 0; i < num_strings; i++) {
+        strcat(result, strings[i]);
+    }
+    
+    pthread_exit(result);
+}
+
+int main() {
+    pthread_t thread_id;
+    int i;
+    char *result;
+    
+    printf("Enter number of strings: ");
+    scanf("%d", &num_strings);
+    
+    if (num_strings > MAX_STRINGS) {
+        printf("Error: too many strings\n");
+        return 1;
+    }
+    
+    for (i = 0; i < num_strings; i++) {
+        printf("Enter string %d: ", i + 1);
+        scanf("%s", strings[i]);
+    }
+    
+    pthread_create(&thread_id, NULL, concatenate_strings, NULL);
+    pthread_join(thread_id, (void **)&result);
+    
+    printf("Result: %s\n", result);
+    free(result);
+    
+    return 0;
+}
+
+6.1
+
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+
+#define MAX_STRING_LENGTH 100
+
+char string[MAX_STRING_LENGTH];
+int string_length;
+
+void *calculate_length(void *arg) {
+    string_length = strlen(string);
+    pthread_exit(NULL);
+}
+
+int main() {
+    pthread_t thread_id;
+    
+    printf("Enter a string: ");
+    scanf("%s", string);
+    
+    pthread_create(&thread_id, NULL, calculate_length, NULL);
+    pthread_join(thread_id, NULL);
+    
+    printf("Length of the string is %d\n", string_length);
+    
+    return 0;
+}
+
+
+6.2
+
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+#define NUM_THREADS 3
+
+int arr[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+int n = sizeof(arr) / sizeof(int);
+
+void *average(void *arg) {
+    int i;
+    double sum = 0.0;
+    for (i = 0; i < n; i++) {
+        sum += arr[i];
+    }
+    double avg = sum / n;
+    printf("Average: %f\n", avg);
+    pthread_exit(NULL);
+}
+
+void *maximum(void *arg) {
+    int i;
+    int max = arr[0];
+    for (i = 1; i < n; i++) {
+        if (arr[i] > max) {
+            max = arr[i];
+        }
+    }
+    printf("Maximum: %d\n", max);
+    pthread_exit(NULL);
+}
+
+void *minimum(void *arg) {
+    int i;
+    int min = arr[0];
+    for (i = 1; i < n; i++) {
+        if (arr[i] < min) {
+            min = arr[i];
+        }
+    }
+    printf("Minimum: %d\n", min);
+    pthread_exit(NULL);
+}
+
+int main() {
+    pthread_t threads[NUM_THREADS];
+    int rc;
+    long t;
+    rc = pthread_create(&threads[0], NULL, average, (void *) t);
+    rc = pthread_create(&threads[1], NULL, maximum, (void *) t);
+    rc = pthread_create(&threads[2], NULL, minimum, (void *) t);
+    pthread_exit(NULL);
+}
+
+6.3
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+#define MAX 100
+
+int arr[MAX];
+int n;
+
+void merge(int low, int mid, int high) {
+    int i, j, k;
+    int temp[MAX];
+    i = low;
+    k = 0;
+    j = mid + 1;
+
+    while (i <= mid && j <= high) {
+        if (arr[i] < arr[j]) {
+            temp[k++] = arr[i++];
+        } else {
+            temp[k++] = arr[j++];
+        }
+    }
+
+    while (i <= mid) {
+        temp[k++] = arr[i++];
+    }
+
+    while (j <= high) {
+        temp[k++] = arr[j++];
+    }
+
+    k--;
+    while (k >= 0) {
+        arr[low + k] = temp[k];
+        k--;
+    }
+}
+
+void merge_sort(int low, int high) {
+    int mid;
+    if (low < high) {
+        mid = (low + high) / 2;
+        merge_sort(low, mid);
+        merge_sort(mid + 1, high);
+        merge(low, mid, high);
+    }
+}
+
+void *sort(void *arg) {
+    int thread_part = *(int *) arg;
+    int low = thread_part * (n / 2);
+    int high = (thread_part + 1) * (n / 2) - 1;
+    merge_sort(low, high);
+}
+
+int main() {
+    pthread_t threads[2];
+    int i;
+
+    printf("Enter total elements: ");
+    scanf("%d", &n);
+
+    printf("Enter elements:\n");
+    for (i = 0; i < n; i++) {
+        scanf("%d", &arr[i]);
+    }
+
+    for (i = 0; i < 2; i++) {
+        pthread_create(&threads[i], NULL, sort, (void *) &i);
+    }
+
+    for (i = 0; i < 2; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    merge(0, n / 2 - 1, n - 1);
+
+    printf("Sorted array: ");
+    for (i = 0; i < n; i++) {
+        printf("%d ", arr[i]);
+    }
+}
