@@ -1,0 +1,102 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <string.h>
+
+void copy_dir(const char *src_dirname, const char *dest_dirname) {
+    DIR *src_dir, *dest_dir;
+    struct dirent *entry;
+    struct stat statbuf;
+    char src_path[256], dest_path[256];
+    int src_len, dest_len;
+
+    // Open the source directory
+    src_dir = opendir(src_dirname);
+    if (src_dir == NULL) {
+        perror("Error opening source directory");
+        exit(EXIT_FAILURE);
+    }
+
+    // Create the destination directory
+    if (mkdir(dest_dirname) == -1) {
+        perror("Error creating destination directory");
+        exit(EXIT_FAILURE);
+    }
+
+    // Open the destination directory
+    dest_dir = opendir(dest_dirname);
+    if (dest_dir == NULL) {
+        perror("Error opening destination directory");
+        exit(EXIT_FAILURE);
+    }
+
+    // Get the length of the source directory name
+    src_len = strlen(src_dirname);
+
+    // Get the length of the destination directory name
+    dest_len = strlen(dest_dirname);
+
+    // Loop through the entries in the source directory
+    while ((entry = readdir(src_dir)) != NULL) {
+        // Construct the full path of the source file/directory
+        snprintf(src_path, sizeof(src_path), "%s/%s", src_dirname, entry->d_name);
+
+        // Get the stat information for the file/directory
+        if (stat(src_path, &statbuf) == -1) {
+            perror("Error getting file/directory information");
+            exit(EXIT_FAILURE);
+        }
+
+        // Construct the full path of the destination file/directory
+        snprintf(dest_path, sizeof(dest_path), "%s/%s", dest_dirname, entry->d_name);
+
+        // Copy the file or recursively copy the directory
+        if (S_ISDIR(statbuf.st_mode)) {
+            if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+                copy_dir(src_path, dest_path);
+            }
+        } else {
+            FILE *src_file, *dest_file;
+            int ch;
+
+            // Open the source file
+            src_file = fopen(src_path, "rb");
+            if (src_file == NULL) {
+                perror("Error opening source file");
+                exit(EXIT_FAILURE);
+            }
+
+            // Create the destination file
+            dest_file = fopen(dest_path, "wb");
+            if (dest_file == NULL) {
+                perror("Error creating destination file");
+                exit(EXIT_FAILURE);
+            }
+
+            // Copy the contents of the file
+            while ((ch = fgetc(src_file)) != EOF) {
+                fputc(ch, dest_file);
+            }
+
+            // Close the files
+            fclose(src_file);
+            fclose(dest_file);
+        }
+    }
+
+    // Close the directories
+    closedir(src_dir);
+    closedir(dest_dir);
+}
+
+int main() {
+    const char *src_dirname = "kashish";
+    const char *dest_dirname = "mydir_copy";
+
+    copy_dir(src_dirname, dest_dirname);
+
+    printf("Directory copied successfully.\n");
+
+    return 0;
+}
