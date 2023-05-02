@@ -1,0 +1,268 @@
+8.1
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#define PIPE_NAME "my_pipe"
+
+int main() {
+    pid_t pid;
+    int fd;
+
+    // Create the named pipe
+    mkfifo(PIPE_NAME, 0666);
+
+    // Fork a child process
+    pid = fork();
+    if (pid < 0) {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+
+    // Parent process writes to the pipe
+    else if (pid > 0) {
+        char *message = "Hello from parent process!\n";
+        fd = open(PIPE_NAME, O_WRONLY);
+        if (fd < 0) {
+            perror("open");
+            exit(EXIT_FAILURE);
+        }
+        write(fd, message, strlen(message));
+        close(fd);
+    }
+
+    // Child process reads from the pipe
+    else {
+        char buffer[1024];
+        fd = open(PIPE_NAME, O_RDONLY);
+        if (fd < 0) {
+            perror("open");
+            exit(EXIT_FAILURE);
+        }
+        read(fd, buffer, sizeof(buffer));
+        printf("Received message from parent: %s", buffer);
+        close(fd);
+    }
+
+    // Remove the named pipe
+    unlink(PIPE_NAME);
+
+    return 0;
+}
+
+
+8.2
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+
+#define MSG_SIZE 1024
+
+struct message {
+    long mtype;
+    char mtext[MSG_SIZE];
+};
+
+int main() {
+    key_t key;
+    int msqid;
+    struct message msg;
+
+    // Generate a unique key
+    key = ftok(".", 'M');
+    if (key < 0) {
+        perror("ftok");
+        exit(EXIT_FAILURE);
+    }
+
+    // Create a message queue
+    msqid = msgget(key, IPC_CREAT | 0666);
+    if (msqid < 0) {
+        perror("msgget");
+        exit(EXIT_FAILURE);
+    }
+
+    // Fork a child process
+    pid_t pid = fork();
+    if (pid < 0) {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+
+    // Parent process sends a message to the child process
+    else if (pid > 0) {
+        msg.mtype = 1; // Set message type to 1
+        char *message = "Hello from parent process!";
+        strcpy(msg.mtext, message);
+        if (msgsnd(msqid, &msg, strlen(message)+1, 0) < 0) {
+            perror("msgsnd");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    // Child process receives the message from the parent process
+    else {
+        if (msgrcv(msqid, &msg, MSG_SIZE, 1, 0) < 0) {
+            perror("msgrcv");
+            exit(EXIT_FAILURE);
+        }
+        printf("Received message from parent: %s\n", msg.mtext);
+    }
+
+    // Remove the message queue
+    if (msgctl(msqid, IPC_RMID, NULL) < 0) {
+        perror("msgctl");
+        exit(EXIT_FAILURE);
+    }
+
+    return 0;
+}
+
+8.3
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+
+#define MSG_SIZE 1024
+
+struct message {
+    long mtype;
+    char mtext[MSG_SIZE];
+};
+
+int main() {
+    key_t key;
+    int msqid;
+    struct message msg;
+
+    // Generate a unique key
+    key = ftok(".", 'M');
+    if (key < 0) {
+        perror("ftok");
+        exit(EXIT_FAILURE);
+    }
+
+    // Create a message queue
+    msqid = msgget(key, IPC_CREAT | 0666);
+    if (msqid < 0) {
+        perror("msgget");
+        exit(EXIT_FAILURE);
+    }
+
+    // Fork a child process
+    pid_t pid = fork();
+    if (pid < 0) {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+
+    // Parent process sends a message to the child process
+    else if (pid > 0) {
+        msg.mtype = 1; // Set message type to 1
+        char *message = "Hello from parent process!";
+        strcpy(msg.mtext, message);
+        if (msgsnd(msqid, &msg, strlen(message)+1, 0) < 0) {
+            perror("msgsnd");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    // Child process receives the message from the parent process
+    else {
+        if (msgrcv(msqid, &msg, MSG_SIZE, 1, 0) < 0) {
+            perror("msgrcv");
+            exit(EXIT_FAILURE);
+        }
+        printf("Received message from parent: %s\n", msg.mtext);
+    }
+
+    // Remove the message queue
+    if (msgctl(msqid, IPC_RMID, NULL) < 0) {
+        perror("msgctl");
+        exit(EXIT_FAILURE);
+    }
+
+    return 0;
+}
+
+8.4
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+
+#define MSG_SIZE 1024
+
+struct message {
+    long mtype;
+    char mtext[MSG_SIZE];
+};
+
+int main() {
+    key_t key;
+    int msqid;
+    struct message msg;
+
+    // Generate a unique key
+    key = ftok(".", 'M');
+    if (key < 0) {
+        perror("ftok");
+        exit(EXIT_FAILURE);
+    }
+
+    // Create a message queue
+    msqid = msgget(key, IPC_CREAT | 0666);
+    if (msqid < 0) {
+        perror("msgget");
+        exit(EXIT_FAILURE);
+    }
+
+    // Fork a child process
+    pid_t pid = fork();
+    if (pid < 0) {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+
+    // Parent process sends a message to the child process
+    else if (pid > 0) {
+        msg.mtype = 1; // Set message type to 1
+        char *message = "Hello from parent process!";
+        strcpy(msg.mtext, message);
+        if (msgsnd(msqid, &msg, strlen(message)+1, 0) < 0) {
+            perror("msgsnd");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    // Child process receives the message from the parent process
+    else {
+        if (msgrcv(msqid, &msg, MSG_SIZE, 1, 0) < 0) {
+            perror("msgrcv");
+            exit(EXIT_FAILURE);
+        }
+        printf("Received message from parent: %s\n", msg.mtext);
+    }
+
+    // Remove the message queue
+    if (msgctl(msqid, IPC_RMID, NULL) < 0) {
+        perror("msgctl");
+        exit(EXIT_FAILURE);
+    }
+
+    return 0;
+}
+
